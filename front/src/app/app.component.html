@@ -1,0 +1,132 @@
+<div class="min-h-screen bg-gray-50">
+
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-200">
+    <div class="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+      <h1 class="text-xl sm:text-2xl font-semibold text-gray-800 flex items-center gap-2">
+        <span>📝</span> {{ title }}
+      </h1>
+      <button (click)="openCreate()" class="hidden sm:inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 shadow">
+        <span class="text-lg">＋</span>
+        <span>Nueva tarea</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-6xl px-4 mt-4 space-y-2">
+    <div *ngIf="errorMessage" class="rounded-md border border-red-200 bg-red-50 text-red-800 px-4 py-2">
+      {{ errorMessage }}
+    </div>
+    <div *ngIf="successMessage" class="rounded-md border border-green-200 bg-green-50 text-green-800 px-4 py-2">
+      {{ successMessage }}
+    </div>
+  </div>
+
+  <main class="mx-auto max-w-6xl px-4 py-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-medium text-gray-700">Tareas ({{ tasks.length }})</h2>
+      <button (click)="openCreate()" class="sm:hidden inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 shadow">
+        <span class="text-lg">＋</span>
+        <span>Agregar</span>
+      </button>
+    </div>
+
+    <div *ngIf="tasks.length === 0" class="text-center text-gray-500 py-16">
+      No hay tareas. Usa el botón “Nueva tarea” para crear una.
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div *ngFor="let task of tasks" class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition">
+        <div class="flex items-start gap-3">
+          <input type="checkbox" class="mt-1 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" [checked]="task.completed" (change)="toggleComplete(task)">
+          <div class="flex-1">
+            <h3 class="text-base font-medium" [class.line-through]="task.completed" [class.text-gray-400]="task.completed">{{ task.title }}</h3>
+            <p *ngIf="task.description" class="mt-1 text-sm text-gray-600">{{ task.description }}</p>
+            <div class="mt-3 flex items-center gap-2 text-xs text-gray-500">
+              <span>Creada: {{ task.created_at | date:'short' }}</span>
+              <span class="inline-flex items-center rounded-full px-2 py-0.5"
+                    [class.bg-green-100]="task.completed" [class.text-green-700]="task.completed"
+                    [class.bg-yellow-100]="!task.completed" [class.text-yellow-700]="!task.completed">
+                {{ task.completed ? 'Completada' : 'Pendiente' }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 flex justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
+          <button (click)="startEdit(task)" class="inline-flex items-center rounded-lg bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 text-sm">Editar</button>
+          <button (click)="deleteTask(task.id)" class="inline-flex items-center rounded-lg bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+
+  <button (click)="openCreate()" class="fixed bottom-6 right-6 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white w-14 h-14 shadow-lg flex items-center justify-center text-3xl">＋</button>
+
+
+  <div *ngIf="isCreateOpen" class="modal-backdrop" (click)="closeCreate()">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4" (click)="$event.stopPropagation()">
+      <div class="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <h3 class="text-lg font-medium">Nueva tarea</h3>
+        <button (click)="closeCreate()" class="text-gray-500 hover:text-gray-700">✕</button>
+      </div>
+      <form [formGroup]="taskForm" (ngSubmit)="onSubmit()" class="p-4 space-y-3">
+        <div *ngIf="createErrorMsg" class="rounded-md border border-red-200 bg-red-50 text-red-800 px-3 py-2 text-sm">
+          {{ createErrorMsg }}
+        </div>
+        <div>
+          <label for="title" class="block text-sm font-medium text-gray-700">Título *</label>
+          <input id="title" type="text" formControlName="title" placeholder="Escribe el título"
+                 class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          >
+          <p class="mt-1 text-xs text-red-600" *ngIf="taskForm.get('title')?.invalid && taskForm.get('title')?.touched">El título es requerido</p>
+        </div>
+        <div>
+          <label for="description" class="block text-sm font-medium text-gray-700">Descripción</label>
+          <textarea id="description" rows="3" formControlName="description" placeholder="Opcional"
+                    class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" (click)="closeCreate()" class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancelar</button>
+          <button type="submit" [disabled]="taskForm.invalid || isSubmittingCreate" class="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm disabled:opacity-50">
+            {{ isSubmittingCreate ? 'Creando...' : 'Crear' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div *ngIf="isEditing" class="modal-backdrop" (click)="cancelEdit()">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4" (click)="$event.stopPropagation()">
+      <div class="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <h3 class="text-lg font-medium">Editar tarea</h3>
+        <button (click)="cancelEdit()" class="text-gray-500 hover:text-gray-700">✕</button>
+      </div>
+      <form [formGroup]="editForm" (ngSubmit)="saveEdit()" class="p-4 space-y-3">
+        <div *ngIf="editErrorMsg" class="rounded-md border border-red-200 bg-red-50 text-red-800 px-3 py-2 text-sm">
+          {{ editErrorMsg }}
+        </div>
+        <div>
+          <label for="edit-title" class="block text-sm font-medium text-gray-700">Título *</label>
+          <input id="edit-title" type="text" formControlName="title"
+                 class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <p class="mt-1 text-xs text-red-600" *ngIf="editForm.get('title')?.invalid && editForm.get('title')?.touched">El título es requerido</p>
+        </div>
+        <div>
+          <label for="edit-description" class="block text-sm font-medium text-gray-700">Descripción</label>
+          <textarea id="edit-description" rows="3" formControlName="description"
+                    class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="edit-completed" type="checkbox" formControlName="completed" class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+          <label for="edit-completed" class="text-sm text-gray-700">Tarea completada</label>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" (click)="cancelEdit()" class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cancelar</button>
+          <button type="submit" [disabled]="editForm.invalid || isSubmittingEdit" class="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-sm disabled:opacity-50">
+            {{ isSubmittingEdit ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
